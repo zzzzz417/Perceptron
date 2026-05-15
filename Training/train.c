@@ -5,7 +5,7 @@
 
 #include "train.h"
 #include "tramath.h"
-#include "float.h"
+#include <float.h>
 
 #define PPM_SIZE 5
 #define SHAKE_SIZE 0.80F
@@ -57,86 +57,191 @@ void layer_fill_std_cricle(Layer layer, int cx, int cy,int r,float value)
     }  
 }
 
+static void rand_circle_params(int *cx, int *cy, int *r)
+{
+    *cx = rand_range(0, WIDTH-1);
+    *cy = rand_range(0, HEIGHT-1);
+    int r_max = INT_MAX;
+    if(r_max > *cx) r_max = *cx;
+    if(r_max > *cy) r_max = *cy;
+    if(r_max > HEIGHT - *cy) r_max = HEIGHT - *cy;
+    if(r_max > WIDTH - *cx) r_max = WIDTH - *cx;
+    if(r_max < 1) r_max = 1;
+    *r = rand_range(1, r_max);
+}
+
 void layer_fill_ellipse(Layer layer)
 {
     layer_fill_std_rect(layer, 0, 0, HEIGHT, WIDTH, 0.00f);
-    int cx = rand_range(0, WIDTH-1);
-    int cy = rand_range(0, HEIGHT-1);
-    int r_max = INT_MAX;
-    if(r_max > cx) r_max = cx;
-    if(r_max > cy) r_max = cy;
-    if(r_max > HEIGHT-cy) r_max = HEIGHT-cy;
-    if(r_max > WIDTH-cx) r_max = WIDTH-cx;
-    if(r_max < 1) r_max = 1;
-    int r = rand_range(1, r_max);
+    int cx, cy, r;
+    rand_circle_params(&cx, &cy, &r);
 
-    // const float STEP = 0.02f;
-
-    float ratio = 0.6f + 1.0f * rand() / RAND_MAX * (0.8f);
+    float ratio = 0.6f + 0.8f * rand() / RAND_MAX;
     float rx = r;
     float ry = r * ratio;
     float rot_angle = (float)rand() / RAND_MAX * 2 * PI;
 
-    // 预计算旋转矩阵的 sin/cos
     float cos_rot = cos(rot_angle);
     float sin_rot = sin(rot_angle);
 
     float a = rx, b = ry;
     float perimeter = PI * (3.0f * (a + b) - sqrtf((3.0f * a + b) * (a + 3.0f * b)));
-    
-    // 目标：圆周上每隔1个像素画一个点（可调整密度）
-    const float DENSITY = 1.2f; // 越小越密，1.0=像素级连续，>1留空隙
-    float STEP = DENSITY / perimeter; // 角度步长 = 弧长/周长 = 像素间距/周长
+    const float DENSITY = 1.2f;
+    float STEP = DENSITY / perimeter;
 
     for (float angle = 0; angle < 2 * PI; angle += STEP) {
-        // 1. 先在原点生成椭圆
         float ex = rx * cos(angle);
         float ey = ry * sin(angle);
-        
-        // 2. 旋转椭圆
+
         float rotated_x = ex * cos_rot - ey * sin_rot;
         float rotated_y = ex * sin_rot + ey * cos_rot;
-        
-        // 3. 平移到中心
+
         float x = cx + rotated_x;
         float y = cy + rotated_y;
-        
-        // 4. 抖动（可选）
+
         xy_shake(&x, &y);
 
-        // 5. 取整 + 边界裁剪
         int px = (int)roundf(x);
         int py = (int)roundf(y);
 
-        // 边界检查保证全在layer内
         if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
             layer[py][px] = 1.0f;
         }
     }
 }
 
-void layer_fill_oval()
+void layer_fill_oval(Layer layer)
 {
+    layer_fill_std_rect(layer, 0, 0, HEIGHT, WIDTH, 0.00f);
+    int cx, cy, r;
+    rand_circle_params(&cx, &cy, &r);
 
+    float rx = r;
+    float ry = r * (0.55f + 0.55f * rand() / RAND_MAX);
+    float rot_angle = (float)rand() / RAND_MAX * 2 * PI;
+    float cos_rot = cos(rot_angle);
+    float sin_rot = sin(rot_angle);
+
+    float top_scale = 0.50f + 0.35f * rand() / RAND_MAX;
+    float bot_scale = 1.10f + 0.50f * rand() / RAND_MAX;
+
+    float a = rx, b = ry;
+    float perimeter = PI * (3.0f * (a + b) - sqrtf((3.0f * a + b) * (a + 3.0f * b)));
+    const float DENSITY = 1.2f;
+    float STEP = DENSITY / perimeter;
+
+    for (float angle = 0; angle < 2 * PI; angle += STEP) {
+        float ex = rx * cos(angle);
+        float scale = (angle < PI) ? top_scale : bot_scale;
+        float ey = ry * scale * sin(angle);
+
+        float rotated_x = ex * cos_rot - ey * sin_rot;
+        float rotated_y = ex * sin_rot + ey * cos_rot;
+
+        float x = cx + rotated_x;
+        float y = cy + rotated_y;
+
+        xy_shake(&x, &y);
+
+        int px = (int)roundf(x);
+        int py = (int)roundf(y);
+        if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
+            layer[py][px] = 1.0f;
+        }
+    }
 }
 
-void layer_random_rect()
+void layer_random_rect(Layer layer)
 {
-
+    layer_fill_std_rect(layer, 0, 0, HEIGHT, WIDTH, 0.00f);
+    int x = rand_range(0, WIDTH-2);
+    int y = rand_range(0, HEIGHT-2);
+    int w = rand_range(1, WIDTH - x);
+    int h = rand_range(1, HEIGHT - y);
+    layer_fill_std_rect(layer, y, x, h, w, 1.0f);
 }
 
 void layer_random_cricle(Layer layer)
 {
     layer_fill_std_rect(layer, 0, 0, HEIGHT, WIDTH, 0.00f);
-    int cx = rand_range(0, WIDTH-1);
-    int cy = rand_range(0, HEIGHT-1);
-    int r_max = INT_MAX;
-    if(r_max > cx) r_max = cx;
-    if(r_max > cy) r_max = cy;
-    if(r_max > HEIGHT-cy) r_max = HEIGHT-cy;
-    if(r_max > WIDTH-cx) r_max = WIDTH-cx;
-    if(r_max < 1) r_max = 1;
-    int r = rand_range(1, r_max);
+    int cx, cy, r;
+    rand_circle_params(&cx, &cy, &r);
+
+    int x0 = clampi(cx - r, 0, WIDTH - 1);
+    int y0 = clampi(cy - r, 0, HEIGHT - 1);
+    int x1 = clampi(cx + r, 0, WIDTH - 1);
+    int y1 = clampi(cy + r, 0, HEIGHT - 1);
+    for (int y = y0; y <= y1; y++) {
+        for (int x = x0; x <= x1; x++) {
+            float dx = x - cx;
+            float dy = y - cy;
+            if (dy*dy + dx*dx <= r*r) {
+                layer[y][x] = 1.0f;
+            }
+        }
+    }
+}
+
+void layer_fill_deformed_circle(Layer layer)
+{
+    layer_fill_std_rect(layer, 0, 0, HEIGHT, WIDTH, 0.00f);
+    int cx, cy, r;
+    rand_circle_params(&cx, &cy, &r);
+
+    float deform = 0.08f + 0.22f * rand() / RAND_MAX;
+    float freq1 = 2.0f + 6.0f * rand() / RAND_MAX;
+    float freq2 = 1.0f + 4.0f * rand() / RAND_MAX;
+    float phase = (float)rand() / RAND_MAX * 2 * PI;
+
+    float perimeter = 2 * PI * r;
+    const float DENSITY = 1.0f;
+    float STEP = DENSITY / perimeter;
+
+    for (float angle = 0; angle < 2 * PI; angle += STEP) {
+        float rr = r * (1.0f + deform * (sinf(freq1 * angle + phase) + 0.5f * cosf(freq2 * angle)));
+        float x = cx + rr * cosf(angle);
+        float y = cy + rr * sinf(angle);
+
+        xy_shake(&x, &y);
+
+        int px = (int)roundf(x);
+        int py = (int)roundf(y);
+        if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
+            layer[py][px] = 1.0f;
+        }
+    }
+}
+
+void layer_fill_handdrawn_circle(Layer layer)
+{
+    layer_fill_std_rect(layer, 0, 0, HEIGHT, WIDTH, 0.00f);
+    int cx, cy, r;
+    rand_circle_params(&cx, &cy, &r);
+
+    int strokes = 2 + rand() % 4;
+
+    float perimeter = 2 * PI * r;
+    const float DENSITY = 1.5f;
+    float STEP = DENSITY / perimeter;
+
+    for (int s = 0; s < strokes; s++) {
+        float scx = cx + ((float)rand() / RAND_MAX - 0.5f) * 2.0f * SHAKE_SIZE * 2.5f;
+        float scy = cy + ((float)rand() / RAND_MAX - 0.5f) * 2.0f * SHAKE_SIZE * 2.5f;
+        float sr = r * (0.90f + 0.20f * rand() / RAND_MAX);
+
+        for (float angle = 0; angle < 2 * PI; angle += STEP) {
+            float x = scx + sr * cosf(angle);
+            float y = scy + sr * sinf(angle);
+
+            xy_shake(&x, &y);
+
+            int px = (int)roundf(x);
+            int py = (int)roundf(y);
+            if (px >= 0 && px < WIDTH && py >= 0 && py < HEIGHT) {
+                layer[py][px] = 1.0f;
+            }
+        }
+    }
 }
 
 void layer_save_as_ppm(Layer layer, char* file_path)
@@ -193,11 +298,37 @@ int main(){
 
     // inputs[0][0] = 0.0f;
     char file_path[256];
-    for(int i = 0; i < 20; i++){
-        snprintf(file_path, sizeof(file_path), "data/text%02d.ppm", i);
+    int idx = 0;
+
+    for (int i = 0; i < 5; i++) {
+        snprintf(file_path, sizeof(file_path), "data/ellipse%02d.ppm", idx);
         layer_fill_ellipse(inputs);
         layer_save_as_ppm(inputs, file_path);
-        printf("[INFO] preduced i%02d\n",i); 
+        printf("[INFO] ellipse   %02d\n", idx++);
+    }
+    for (int i = 0; i < 5; i++) {
+        snprintf(file_path, sizeof(file_path), "data/oval%02d.ppm", idx);
+        layer_fill_oval(inputs);
+        layer_save_as_ppm(inputs, file_path);
+        printf("[INFO] oval      %02d\n", idx++);
+    }
+    for (int i = 0; i < 5; i++) {
+        snprintf(file_path, sizeof(file_path), "data/circle%02d.ppm", idx);
+        layer_random_cricle(inputs);
+        layer_save_as_ppm(inputs, file_path);
+        printf("[INFO] circle    %02d\n", idx++);
+    }
+    for (int i = 0; i < 5; i++) {
+        snprintf(file_path, sizeof(file_path), "data/deformed%02d.ppm", idx);
+        layer_fill_deformed_circle(inputs);
+        layer_save_as_ppm(inputs, file_path);
+        printf("[INFO] deformed  %02d\n", idx++);
+    }
+    for (int i = 0; i < 5; i++) {
+        snprintf(file_path, sizeof(file_path), "data/handdrawn%02d.ppm", idx);
+        layer_fill_handdrawn_circle(inputs);
+        layer_save_as_ppm(inputs, file_path);
+        printf("[INFO] handdrawn %02d\n", idx++);
     }
 
     printf("--------------------->Done!\n");
