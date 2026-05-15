@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude plugins *)",
+      "Skill(frontend-design)",
+      "Bash(cmake --build build --config Release)"
+    ]
+  }
+}

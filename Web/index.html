@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <title>Shape Lab</title>
+    <link rel='stylesheet' href='/style.css'>
+</head>
+<body>
+
+<section class="app">
+    <header class="head">
+        <h1>Shape Lab</h1>
+        <p>Draw a shape. Let the perceptron decide.</p>
+    </header>
+
+    <div class="canvas-frame">
+        <canvas id="drawCanvas" width="340" height="340"></canvas>
+    </div>
+    <canvas id="dataCanvas" width="100" height="100" hidden></canvas>
+
+    <div class="controls">
+        <div class="brush-sizes" id="brushGroup">
+            <button class="bs active" data-size="1"><i></i></button>
+            <button class="bs" data-size="2"><i></i></button>
+            <button class="bs" data-size="3"><i></i></button>
+        </div>
+        <span class="sep"></span>
+        <button class="act" id="eraserBtn">eraser</button>
+        <button class="act" id="clearBtn">clear</button>
+    </div>
+
+    <button class="primary" id="detectBtn">Identify</button>
+
+    <div class="result" id="resultsPanel">
+        <div class="gauge">
+            <div class="gauge-track">
+                <div class="gauge-fill" id="resultFill"></div>
+                <div class="gauge-pin" id="resultMarker"></div>
+            </div>
+            <div class="gauge-labels">
+                <span>Circle</span><span>Rectangle</span>
+            </div>
+        </div>
+        <div class="reading" id="resultValue"></div>
+        <div class="hint">draw something to begin</div>
+    </div>
+</section>
+
+<script src='/script.js'></script>
+</body>
+</html>
