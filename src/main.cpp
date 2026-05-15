@@ -37,7 +37,6 @@ HMODULE LoadDllFromResource(int resourceId)
     return hMod;
 }
 
-
 std::string url="http://127.0.0.1:";
 int main(){
     #ifdef _WIN32
@@ -64,12 +63,21 @@ int main(){
     // });
 
     basic_server.Post("/api/predict",[&](const httplib::Request request, httplib::Response response)->void{
-
-
-
+        std::cout<< "[INFO] check\n";
     });
 
-
+    //--- app control endpoints (called from web UI)
+    HWND app_hwnd = NULL;
+    basic_server.Get("/app/minimize", [&](const httplib::Request&, httplib::Response& res) {
+        std::cout << "[INFO] minimize\n";
+        if (app_hwnd) ShowWindow(app_hwnd, SW_MINIMIZE);
+        res.set_content("ok", "text/plain");
+    });
+    basic_server.Get("/app/close", [&](const httplib::Request&, httplib::Response& res) {
+        std::cout << "[INFO] close\n";
+        if (app_hwnd) PostMessageW(app_hwnd, WM_CLOSE, 0, 0);
+        res.set_content("ok", "text/plain");
+    });
     basic_server.set_mount_point("/","../Web");
     int port=basic_server.bind_to_any_port("127.0.0.1");
     if(port<0)return -1;
@@ -81,19 +89,60 @@ int main(){
 
     basic_server.wait_until_ready();
 
-    webview::webview w(false, nullptr);
+    webview::webview w(true, nullptr);
     w.set_title(" ");
-    w.set_size(550, 900, WEBVIEW_HINT_FIXED);
+    w.set_size(800, 450, WEBVIEW_HINT_FIXED);
     w.navigate(url);
 
 #ifdef _WIN32
     void* hwnd_ptr =w.window().value();
     HWND hwnd=(HWND)hwnd_ptr;
+    app_hwnd = hwnd;
+
     HICON hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(101));
     SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
     SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-    //------------------------
+
+    //--- frameless: remove title bar, keep DWM shadow
+    {
+        LONG lstyle = GetWindowLongW(hwnd, GWL_STYLE);
+        lstyle &= ~WS_CAPTION;
+        SetWindowLongW(hwnd, GWL_STYLE, lstyle);
+        SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        MARGINS m = {1,1,1,1};
+        DwmExtendFrameIntoClientArea(hwnd, &m);
+    }
+
+    //--- rounded corners (Win11 native, Win10 region fallback)
+    {
+        DWM_WINDOW_CORNER_PREFERENCE cp = DWMWCP_ROUND;
+        HRESULT hr = DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE,
+                                           &cp, sizeof(cp));
+        if (FAILED(hr)) {
+            RECT r; GetWindowRect(hwnd, &r);
+            int ww = r.right - r.left;
+            int wh = r.bottom - r.top;
+            HRGN rgn = CreateRoundRectRgn(0, 0, ww + 1, wh + 1, 20, 20);
+            SetWindowRgn(hwnd, rgn, TRUE);
+        }
+    }
+
 #endif
+
+    //--- drag endpoint (needs w for main-thread dispatch)
+    basic_server.Get("/app/drag", [&](const httplib::Request&, httplib::Response& res) {
+        std::cout << "[INFO] drag\n";
+        HWND h = app_hwnd;
+        if (h) {
+            w.dispatch([h]() {
+                std::cout << "[INFO] drag on main thread\n";
+                ReleaseCapture();
+                SendMessageW(h, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+            });
+        }
+        res.set_content("ok", "text/plain");
+    });
 
     w.run();
 
@@ -101,6 +150,6 @@ int main(){
     if(server_thread.joinable()) {
         server_thread.join();
     }
-    return 0;    
+    // system("pause");
+    return 0;
 }
-

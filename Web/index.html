@@ -8,42 +8,57 @@
 </head>
 <body>
 
+<!-- custom title bar -->
+<div class="tbar" id="tbar">
+    <span class="tbar-title">Shape Lab</span>
+    <div class="tbar-actions">
+        <button class="tbar-btn" id="btnMin" title="Minimize">&minus;</button>
+        <button class="tbar-btn" id="btnClose" title="Close">&times;</button>
+    </div>
+</div>
+
 <section class="app">
     <header class="head">
         <h1>Shape Lab</h1>
         <p>Draw a shape. Let the perceptron decide.</p>
     </header>
 
-    <div class="canvas-frame">
-        <canvas id="drawCanvas" width="340" height="340"></canvas>
-    </div>
-    <canvas id="dataCanvas" width="100" height="100" hidden></canvas>
-
-    <div class="controls">
-        <div class="brush-sizes" id="brushGroup">
-            <button class="bs active" data-size="1"><i></i></button>
-            <button class="bs" data-size="2"><i></i></button>
-            <button class="bs" data-size="3"><i></i></button>
+    <div class="main">
+        <!-- left: canvas -->
+        <div class="canvas-frame">
+            <canvas id="drawCanvas" width="300" height="300"></canvas>
         </div>
-        <span class="sep"></span>
-        <button class="act" id="eraserBtn">eraser</button>
-        <button class="act" id="clearBtn">clear</button>
-    </div>
+        <canvas id="dataCanvas" width="100" height="100" hidden></canvas>
 
-    <button class="primary" id="detectBtn">Identify</button>
-
-    <div class="result" id="resultsPanel">
-        <div class="gauge">
-            <div class="gauge-track">
-                <div class="gauge-fill" id="resultFill"></div>
-                <div class="gauge-pin" id="resultMarker"></div>
+        <!-- right: side panel -->
+        <div class="side">
+            <div class="controls">
+                <div class="brush-sizes" id="brushGroup">
+                    <button class="bs active" data-size="1"><i></i></button>
+                    <button class="bs" data-size="2"><i></i></button>
+                    <button class="bs" data-size="3"><i></i></button>
+                </div>
+                <span class="sep"></span>
+                <button class="act" id="eraserBtn">eraser</button>
+                <button class="act" id="clearBtn">clear</button>
             </div>
-            <div class="gauge-labels">
-                <span>Circle</span><span>Rectangle</span>
+
+            <button class="primary" id="detectBtn">Identify</button>
+
+            <div class="result" id="resultsPanel">
+                <div class="gauge">
+                    <div class="gauge-track">
+                        <div class="gauge-fill" id="resultFill"></div>
+                        <div class="gauge-pin" id="resultMarker"></div>
+                    </div>
+                    <div class="gauge-labels">
+                        <span>Circle</span><span>Rectangle</span>
+                    </div>
+                </div>
+                <div class="reading" id="resultValue"></div>
+                <div class="hint">draw to begin</div>
             </div>
         </div>
-        <div class="reading" id="resultValue"></div>
-        <div class="hint">draw something to begin</div>
     </div>
 </section>
 

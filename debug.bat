@@ -3,4 +3,4 @@ cd .\build\
 cmake .. -G"MinGW Makefiles"
 mingw32-make
 cls
-%1
+start %1
